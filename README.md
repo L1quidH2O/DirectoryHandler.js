@@ -9,6 +9,16 @@ document.onclick = async function(){
 }
 ```
 
+CDN
+====
+```html
+<script src="https://cdn.jsdelivr.net/gh/L1quidH2O/DirectoryHandler.js@latest/DirectoryHandler.min.js"></script>
+```
+
+MDN Web Docs
+============
+[MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
+
 Examples
 ============
 
