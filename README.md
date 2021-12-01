@@ -27,7 +27,7 @@ mkdir()
 *Creates a subdirectory*
 
 ```js
-await dirHandle.mkDir("folder/nestedfolder")
+await dirHandle.mkdir("folder/nestedfolder")
 ```
 
 it will also create parent directories that do not exist
