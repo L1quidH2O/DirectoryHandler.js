@@ -132,10 +132,10 @@ await dirHandle.writeFile("*.txt", "nice file", true)   //third argument = appen
 
 #### NOTE: do **not** use writeFile() if you want ot constantly append to a file, as it writes to disk every function call and will be slow, instead use appendFileStream()
 
-<br>
+
 appendFileStream()
 ------------------
-*return a `DirectoryHandler.appendFileStream()`*
+*return a DirectoryHandler.appendFileStream()*
 
 Same as BufferedWriter() in java
 
