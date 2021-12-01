@@ -320,7 +320,7 @@ class DirectoryHandler {
     }
 
     /**
-     * Same as BufferedWriter() in jave
+     * Same as BufferedWriter() in java
      * appending to file will fill in a string,
      * when the string reaches a certain length (default is 8192)
      * it will flush it all into the temp file.
@@ -332,8 +332,7 @@ class DirectoryHandler {
      * (does NOT support wildcard)
      *  
      * ```
-     * var fs = new FileSystem(...);
-     * var appendStream = await fs.appendFileStream(String directory, bufferSize = 8192);
+     * var appendStream = await dirHandle.appendFileStream(String directory, bufferSize = 8192);
      * await appendStream.append("nice");
      * await appendStream.close();
      * ```
@@ -363,7 +362,7 @@ class DirectoryHandler {
             this.getFile(directory)
                 .then(e=>e.getFile())
                 .then(e=>e.stream())
-                .then(e=>getReader())
+                .then(e=>e.getReader())
                 .then(e=>resolve(e))
                 .catch(e=>reject(e));
 
