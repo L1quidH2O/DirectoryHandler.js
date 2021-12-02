@@ -49,6 +49,8 @@ sort() accepts wildcards, if the path is left undefined, it will sort all files 
 
 ```js
 await dirHandle.sort("*.js")
+//OR
+await dirHandle.sort(["file.txt", "file2.txt", "file3.js"])
 ```
 
 The second argument of sort() is a sort function, if left undefined it will sort by size from least to greatest
