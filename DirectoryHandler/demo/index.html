@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DirectoryHandler.js Demo</title>
+    <style>
+        body{
+            background-color: black;
+            color: white;
+            font-family: monospace;
+            font-size: 16px;
+        }
+        
+        ::selection{
+            background-color: white;
+            color: black;
+        }
+
+        .current_line{
+            width: 100%;
+            word-break: break-all;
+        }
+
+        .input_div{
+            display: flex;
+            width: 100%;
+            white-space: pre-wrap;
+        }
+
+        .current_dir{
+            flex-shrink: 0;
+        }
+
+        .input_code{
+            border: none;
+            outline: none;
+            width: 100%;
+        }
+
+        .output{
+            width: 100%;
+            white-space: pre-wrap;
+        }
+
+        .uploadDir{
+            position: fixed;
+            top:0;
+            left:0;
+            width: 100vw;
+            height: 100vh;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            user-select: none;
+        }
+
+        .cursorflash:before{
+            content: "_";
+            position: relative;
+            display: inline-block;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%,50% {visibility: hidden; opacity: 0;}
+            51%,100% {visibility: visible; opacity: 1;}
+        }
+
+        
+
+    </style>
+</head>
+<body>
+    <div class="history">
+    </div>
+
+    <div class="current_line">
+        <div class="input_div">
+            <div class="current_dir"></div>
+            <div class="input_code" contenteditable="" tabindex="0"></div>
+        </div>
+    </div>
+    
+    <div class="uploadDir">
+        click to select folder
+        <span class="cursorflash"></span>
+    </div>
+
+</body>
+
+
+
+<script>
+    const current_line = document.querySelector(".current_line");
+    const current_dir = current_line.querySelector(".current_dir");
+    const input_code = current_line.querySelector(".input_code");
+</script>
+
+
+
+<script src="../DirectoryHandler.js"></script>
+<script>
+
+    const dirHandle = new DirectoryHandler();
+    
+    document.querySelector(".uploadDir").onclick = async function(){
+        dirHandle.assignFS(await window.showDirectoryPicker());
+        current_dir.textContent = dirHandle.currentDirectory + "> ";
+        document.querySelector(".uploadDir").style.display = "none";
+    }
+
+    current_line.addEventListener("keydown", async e=>{
+        if(e.keyCode === 13){
+            e.preventDefault();
+
+            var code = input_code.textContent;
+            code = code.split(/\s+/).filter(d=>d);
+            
+            var out = "", error;
+            try{
+                switch(code[0].toLowerCase()){
+                    case "dir":
+                        var dir = await dirHandle.dir(code[1])
+                        var numDirs = 0, numFiles = 0;
+                        dir.forEach(d => {
+                            if(d.kind === "directory"){
+                                numDirs ++;
+                                out += `<DIR>   ${d.name}\n`
+                            }
+                            else if(d.kind === "file"){
+                                numFiles ++;
+                                out += `        ${d.name}\n`
+                            }
+                        });
+                        out += `  ${numDirs} Dir(s)\n  ${numFiles} File(s)`;
+                        writeOutput(out);
+                    break;
+
+                    case "cd":
+                        await dirHandle.cd(code[1])
+                        writeOutput("")
+                    break;
+
+                    case "cls":
+                        writeOutput("");
+                        document.querySelector(".history").innerHTML = "";
+                    break;
+
+                    case "mkdir":
+                        await dirHandle.mkdir(code[1]);
+                        writeOutput("");
+                    break;
+                    
+                    case "sort":
+                        var t = (await dirHandle.sort(code[1]))
+                        var largestBytes = t[t.length - 1].size.toLocaleString().length;
+
+                        t  = t.map(d=>{
+                            var size = d.size.toLocaleString();
+                            return d.lastModifiedDate.toLocaleDateString() + "   " + 
+                                   d.lastModifiedDate.toLocaleTimeString() + "   " + 
+                                   d.size.toLocaleString() + " ".repeat(largestBytes - d.size.toLocaleString().length + 3) +
+                                   d.name
+                        }).join("\n")
+
+                        writeOutput(t);
+                    break;
+
+                    case "file":
+                        var d = await dirHandle.getFile(code[1]);
+                        if(d instanceof FileSystemFileHandle){
+                            d = await d.getFile();
+                            writeOutput(d.lastModifiedDate.toLocaleDateString() + "   " + 
+                                    d.lastModifiedDate.toLocaleTimeString() + "   " + 
+                                    d.size.toLocaleString() + "   " + 
+                                    d.name);
+                        }
+                        else{
+                            for(var i = 0; i < d.length; i ++){
+                                d[i] = await d[i].getFile();
+                                d[i] = d[i].lastModifiedDate.toLocaleDateString() + "   " + 
+                                       d[i].lastModifiedDate.toLocaleTimeString() + "   " + 
+                                       d[i].size.toLocaleString() + "   " + 
+                                       d[i].name;
+                            }
+                            d = d.join("\n");
+                            writeOutput(d);
+                        }
+                    break;
+
+                    case "read":
+                        writeOutput(await dirHandle.readFile(code[1]));
+                    break;
+
+                    case "append":
+                        await dirHandle.writeFile(code[1], code[2], true)
+                        writeOutput("")
+                    break;
+
+                    case "write":
+                        await dirHandle.writeFile(code[1], code[2], false)
+                        writeOutput("")
+                    break;
+                    
+                    case "help":
+                        if(code[1] === undefined){
+                            writeOutput("\n" + 
+                                'For more information on a specific command, type HELP command-name\n' + 
+                                "DIR        Displays a list of files and subdirectories in a directory\n" +
+                                "CD         Change directory\n" +
+                                "CLS        Clear screen\n" +
+                                "MKDIR      Make a subdirectory\n" +
+                                "SORT       Sort all files in directory by least to greatest file size\n" +
+                                "FILE       Display info of file(s)\n" +
+                                "READ       Display content of file\n" +
+                                "APPEND     Append text to file(s)\n" +
+                                "WRITE      Overwrite file(s)"
+                            )
+                        }
+                        else{
+                            switch(code[1].toLowerCase()){
+                                case "dir":
+                                    writeOutput("\n" + 
+                                        "DIR [directory]\n" + 
+                                        "Displays a list of files and subdirectories in a directory"
+                                    )
+                                break;
+                                case "cd":
+                                    writeOutput("\n" + 
+                                        "CD [directory]\n" + 
+                                        "Changes to directory to [directory]"
+                                    )
+                                break;
+                                case "cls":
+                                    writeOutput("\n" + 
+                                        "CLS\n" + 
+                                        "Clears the screen"
+                                    )
+                                break;
+                                case "mkdir":
+                                    writeOutput("\n" + 
+                                        "MKDIR [directory or nested directories]\n" + 
+                                        "Creates a subdirectory, if a nested directory is entered MKDIR will create all parent directories that do not exist"
+                                    )
+                                break;
+                                case "sort":
+                                    writeOutput("\n" + 
+                                        "SORT [wildcard]\n" + 
+                                        "sorts files in directory by size from least to greatest, accepts wildcards"
+                                    )
+                                break;
+                                case "file":
+                                    writeOutput("\n" + 
+                                        "FILE [filepath or wildcard]\n" + 
+                                        "Displays info on file(s)"
+                                    )
+                                break;
+                                case "read":
+                                    writeOutput("\n" + 
+                                        "READ [filepath]\n" + 
+                                        "Displays content of file"
+                                    )
+                                break;
+                                case "append":
+                                    writeOutput("\n" + 
+                                        "APPEND [filepath or wildcard] [content]\n" + 
+                                        "Appends [content] to end of file(s)"
+                                    )
+                                break;
+                                case "write":
+                                    writeOutput("\n" + 
+                                        "WRITE [filepath or wildcard] [content]\n" + 
+                                        "Writes [content] to file(s)"
+                                    )
+                                break;
+
+                                default:
+                                    writeOutput("Command unrecognized, use HELP to see all commands", true)
+                            }
+                        }
+                    break;
+
+                    default:
+                        writeOutput("Command unrecognized, use HELP to see all commands", true)
+                }
+            }
+            catch(e){
+                writeOutput(e, true);
+            }
+        }
+    })
+
+    function writeOutput(output, isError){
+        var curL = document.createElement("div");
+        curL.classList.add("current_line");
+
+            var inputDiv = document.createElement("div");
+            inputDiv.classList.add("input_div");
+                var curD = document.createElement("div");
+                curD.classList.add("current_dir");
+                curD.textContent = current_dir.textContent;
+
+                var inputC = document.createElement("div");
+                inputC.style.width = "100%";
+                inputC.textContent = input_code.textContent;
+
+                var outputD = document.createElement("div");
+                outputD.classList.add("output")
+                outputD.textContent = output + "\n\n";
+
+                if(isError){ outputD.style.color = "#ff3333"; }
+            
+            inputDiv.appendChild(curD)
+            inputDiv.appendChild(inputC)
+
+        curL.appendChild(inputDiv)
+        curL.appendChild(outputD)
+
+        document.querySelector(".history").appendChild(curL);
+        input_code.textContent = "";
+        current_dir.textContent = dirHandle.currentDirectory + "> ";
+    }
+
+</script>
+
+</html>
