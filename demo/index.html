@@ -206,6 +206,21 @@
                         writeOutput("")
                     break;
                     
+                    case "copy":
+                        await dirHandle.copy(code[1], code[2])
+                        writeOutput(`copied ${code[1]} to ${code[2]}`)
+                    break;
+                    
+                    case "move":
+                        await dirHandle.move(code[1], code[2])
+                        writeOutput(`moved ${code[1]} to ${code[2]}`)
+                    break;
+
+                    case "delete":
+                        await dirHandle.removeEntry(code[1])
+                        writeOutput("")
+                    break;
+
                     case "help":
                         if(code[1] === undefined){
                             writeOutput("\n" + 
@@ -218,7 +233,10 @@
                                 "FILE       Display info of file(s)\n" +
                                 "READ       Display content of file\n" +
                                 "APPEND     Append text to file(s)\n" +
-                                "WRITE      Overwrite file(s)"
+                                "WRITE      Overwrite file(s)\n" +
+                                "COPY       Copies file to another location\n" +
+                                "MOVE       Copies file to another location\n" +
+                                "DELETE     Deletes a file or folder"
                             )
                         }
                         else{
@@ -275,6 +293,24 @@
                                     writeOutput("\n" + 
                                         "WRITE [filepath or wildcard] [content]\n" + 
                                         "Writes [content] to file(s)"
+                                    )
+                                break;
+                                case "copy":
+                                    writeOutput("\n" + 
+                                        "COPY [filepath] [destination]\n" + 
+                                        "Copies file to a directory or file, if it is copied to a file, the file content is overwritten"
+                                    )
+                                break;
+                                case "move":
+                                    writeOutput("\n" + 
+                                        "MOVE [filepath] [destination]\n" + 
+                                        "Copies file to destination, then deletes the file"
+                                    )
+                                break;
+                                case "delete":
+                                    writeOutput("\n" + 
+                                        "DELETE [directory]\n" + 
+                                        "Deletes a file or folder, if deleting a folder, it will delete all subdirectories and files in it"
                                     )
                                 break;
 

@@ -197,8 +197,6 @@ class DirectoryHandler {
         return new Promise(async (resolve, reject)=>{
             directory = this.fixDir(directory);
             
-            if(directory === this.rootDir + "/"){resolve(this.fs); return;}
-
             var dir = directory.split("/"), pos = this.fs;
             for(var i = 1; i < dir.length; i ++){
                 try{
