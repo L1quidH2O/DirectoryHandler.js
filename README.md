@@ -77,6 +77,8 @@ getDir()
 --------
 *returns a FileSystemDirectoryHandle*
 
+second argument of `getDir()` is a boolean, if true it wil create all directories in the path that are missing, same as `mkdir()`
+
 ```js
 await dirHandle.getDir("folder/folder")
 ```
@@ -88,14 +90,29 @@ getFile()
 ---------
 *returns FileSystemFileHandle*
 
+second argument of `getFile()` is a boolean, if true it will create the file if it is missing
+
 ```js
 await dirHandle.getFile("file.txt")
+```
+
+```js
+await dirHandle.getFile("nonexistant.txt", true)    //nonexistant.txt will be created and its FileHandle will be returned
 ```
 
 getFile() accepts wildcards, and will return FileSystemFileHandle[]
 
 ```js
 await dirHandle.getFile("*.txt")
+```
+
+removeEntry()
+-------------
+*deletes a file or directory*
+
+```js
+await dirHandle.removeEntry("folder/folder/file.txt")
+await dirHandle.removeEntry("folder/folder")  //deletes directory and all the files in it
 ```
 
 readFile()
@@ -171,6 +188,8 @@ copy()
 ------
 *copies file to a directory or overwrites a target file with file content*
 
+NOTE: directories cannot be copied
+
 ```js
 //file to file
 await dirHandle.copy("file.txt", "target.txt")
@@ -180,6 +199,23 @@ await dirHandle.copy("file.txt", "folder")
 ```
 
 copy() does **not** support wildcard
+
+
+move()
+------
+*copies file to a directory or overwrites a target file with file content, then deletes the original file*
+
+NOTE: directories cannot be moved
+
+```js
+//file to file
+await dirHandle.move("file.txt", "target.txt")
+
+//file to directory
+await dirHandle.copy("file.txt", "folder")
+```
+
+move() does **not** support wildcard
 
 
 tree

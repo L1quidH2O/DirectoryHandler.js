@@ -298,16 +298,26 @@ class DirectoryHandler {
             try{
                 if(file instanceof FileSystemFileHandle){
                     var writable = await file.createWritable({keepExistingData: append});
-                    if(append){ await writable.seek((await file.getFile()).size) }
-                    await writable.write(content);
-                    await writable.close();
+                    try{
+                        if(append){ await writable.seek((await file.getFile()).size) }
+                        await writable.write(content);
+                    }
+                    catch(e){reject(e)}
+                    finally{
+                        await writable.close();
+                    }
                 }
                 else{
                     for(var i = 0; i < file.length; i ++){
                         var writable = await file[i].createWritable({keepExistingData: append});
-                        if(append){ await writable.seek((await file[i].getFile()).size) }
-                        await writable.write(content);
-                        await writable.close();
+                        try{
+                            if(append){ await writable.seek((await file[i].getFile()).size) }
+                            await writable.write(content);
+                        }
+                        catch(e){reject(e)}
+                        finally{
+                            await writable.close();
+                        }
                     }
                 }
             }
@@ -316,6 +326,32 @@ class DirectoryHandler {
             }
 
             resolve();
+        })
+    }
+
+    /**
+     * Deletes a file or directory, CANNOT delete the root directory.
+     * does not support wildcard
+     * 
+     * @param {String} directory directory of file you want to delete
+     * @returns {undefined}
+    */
+    removeEntry(directory){
+        return new Promise(async (resolve, reject) => {
+            directory = this.fixDir(directory);
+
+            if(directory.includes("*")){reject("removeEntry() does not support wildcard"); return;}
+
+            if(directory === this.rootDir){reject("cannot delete root directory"); return;}
+
+            var parentDir = directory.split("/")
+            var file = parentDir.pop();
+
+            await this.getDir(parentDir.join("/"))
+                .then(e=>e.removeEntry(file, {recursive: true}))
+                .catch(e=>reject(e))
+            
+            resolve()
         })
     }
 
@@ -371,7 +407,53 @@ class DirectoryHandler {
 
     /**
      * copies a file to a directory or file. if copied to a file, the destination file is overwritten with the files data
-     * unfortunatly directories cannot be copied
+     * 
+     * directories cannot be copied
+     * 
+     * (does NOT support wildcard)
+     * 
+     * @param {String} directory file directory that you want to copy (folders are cannot be copied)
+     * @param {String} destination folder or file you want to copy the file to
+     * @returns {undefined}
+    **/
+    copy(directory, destination){
+        return new Promise(async (resolve, reject) => {
+            
+            var file = await this.getFile(directory)
+                            .catch(e=>reject(e));
+
+            if(!file){return;}
+
+            var to = await this.getDir(destination)                      //to a directory
+                           .catch(()=>this.getFile(destination, true))   //to a File
+                           .catch(e=>reject(e));
+            
+            if(!to){return;}
+
+            await file.getFile()
+                .then(e=>e.stream())
+                .then(async e => {
+                    if(to instanceof FileSystemFileHandle){
+                        return e.pipeTo(await to.createWritable())
+                    }
+                    else{
+                        await this.getFile(this.fixDir(destination) + "/" + file.name, true)
+                                .then(d=>d.createWritable())
+                                .then(d=>e.pipeTo(d))
+                    }
+                })
+                .catch(e=>reject(e));
+            resolve();
+            
+        })
+    }
+
+    /**
+     * moves a file to a directory or file. if moved to a file, the destination file is overwritten with the files data
+     * 
+     * NOTE: you can use move() to rename files
+     * 
+     * directories cannot be moved
      * 
      * (does NOT support wildcard)
      * 
@@ -379,26 +461,13 @@ class DirectoryHandler {
      * @param {String} destination folder or file you want to move the file to
      * @returns {undefined}
     **/
-    copy(directory, destination){
+    move(directory, destination){
         return new Promise(async (resolve, reject) => {
-            var error;
-            var file = await this.getFile(directory).catch(e=>(error = e));
-            if(error){reject(error); return;}
-
-            var to = await this.getDir(destination)                      //to a directory
-                           .catch(()=>this.getFile(destination, true).catch(e=>(error = e)))   //to a File
-
-            if(error){reject(error); return;}
-
-            if(to instanceof FileSystemFileHandle){
-                this.writeFile(to, await (await file.getFile()).arrayBuffer(), false).catch(e=>reject(e));
-            }
-            else{
-                this.writeFile(this.fixDir(destination) + "/" + file.name, await (await file.getFile()).arrayBuffer()).catch(e=>reject(e));
-            }
+            await this.copy(directory, destination)
+                    .then(()=>this.removeEntry(directory))
+                    .catch(e=>reject(e));
             
             resolve();
-            
         })
     }
 
