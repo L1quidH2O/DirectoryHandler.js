@@ -8,9 +8,7 @@ class DirectoryHandler {
      * @param {FileSystemDirectoryHandle|undefined} FSDirectoryHandle optional. You can use FileSystem.assignFS(..) instead
     */
     constructor(FSDirectoryHandle) {
-        if (FSDirectoryHandle instanceof FileSystemDirectoryHandle) {
-            this.fs = FileSystemDirectoryHandle;
-        }
+        if(FSDirectoryHandle !== undefined){this.assignFS(FSDirectoryHandle);}
     }
 
     /**
@@ -18,6 +16,9 @@ class DirectoryHandler {
      * @param {FileSystemDirectoryHandle} FSDirectoryHandle
     **/
     assignFS(FSDirectoryHandle) {
+        if (!(FSDirectoryHandle instanceof FileSystemDirectoryHandle)){
+            throw new TypeError("Parameter 1 is not a type of FileSystemDirectoryHandle")
+        }
         this.fs = FSDirectoryHandle;
         this.rootDir = FSDirectoryHandle.name + ":";    // special character ":" so if a file in the root folder with the same name as the root folder wont cause problems
         this.currentDirectory = this.rootDir;
