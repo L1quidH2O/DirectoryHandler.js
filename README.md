@@ -160,7 +160,7 @@ Same as BufferedWriter() in java
 
 appending to file will fill in a string,
 when the string reaches a certain length (default is 8192)
-it will flush it all into the temp file.
+it will flush it all into the file.
 
 it only writes to disk on `flush()` and `close()`
 
@@ -212,7 +212,7 @@ NOTE: directories cannot be moved
 await dirHandle.move("file.txt", "target.txt")
 
 //file to directory
-await dirHandle.copy("file.txt", "folder")
+await dirHandle.move("file.txt", "folder")
 ```
 
 move() does **not** support wildcard
