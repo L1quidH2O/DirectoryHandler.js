@@ -608,6 +608,7 @@ DirectoryHandler.appendFileStream = class{
 
     async close(){
         if(!this.#initiated){await this.#init()}
+        await this.flush();
         await this.writableStream.close();
     }        
 }
