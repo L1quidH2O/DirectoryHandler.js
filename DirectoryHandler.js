@@ -150,36 +150,27 @@ class DirectoryHandler {
         var d = directory.split("/");
         var fixedDir;
 
-        if(directory === this.rootDir){
-            fixedDir = directory + "/";
+        if(directory[0] === "/"){
+            d.shift();
+            fixedDir = [this.rootDir].concat(d);
         }
-
-        //starts with this.rootPath
-        else if (d[0] === this.rootDir){fixedDir = directory;}
-
-        //starts with /
-        else if (directory[0] === "/"){fixedDir = this.rootDir + directory;}
-
-        //go back one folder
-        else if(d[0] === ".."){
-            let t = this.currentDirectory.split("/"); t.pop(); t = t.join("/");
-            fixedDir = t + (d[0] === ".." ? directory.substring(2) || "/": directory);
+        else if(d[0] === this.rootDir){
+            fixedDir = d;
         }
-
-        //same directory (starts with ./ or with folder name)
-        else if (d[0] === "." || directory[0] !== "/"){
-            fixedDir = this.currentDirectory + (d[0] === "." ? directory.substring(1) : "/" + directory);
+        else{
+            fixedDir = this.currentDirectory.split("/").concat(d);
         }
-
-        fixedDir = fixedDir.split("/");
+        
         for(var i = 1; i < fixedDir.length; i ++){
             switch(fixedDir[i]){
                 case "..":
                     fixedDir.splice(i - 1, 2);
+                    i -= 2;
                 break;
                 case ".":
                 case "":
                     fixedDir.splice(i, 1);
+                    i --;
                 break;
             }
         }
