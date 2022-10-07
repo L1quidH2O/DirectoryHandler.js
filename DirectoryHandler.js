@@ -551,7 +551,7 @@ class DirectoryHandler {
      * @returns {Boolean} Promise that resolves with boolean
     **/
     equals(directoryHandler){
-        return this.fs.fs.isSameEntry(directoryHandler.fs);
+        return this.fs.isSameEntry(directoryHandler.fs);
     }
 
     /**
